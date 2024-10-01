@@ -104,7 +104,6 @@ impl Dynamic {
     }
 
     pub fn concat(self, rhs: Dynamic) -> Dynamic {
-        println!("{self:?}, {rhs:?}");
         Dynamic::new((self.val << rhs.bits) | rhs.val, self.bits + rhs.bits)
     }
 
