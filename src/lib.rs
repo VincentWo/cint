@@ -2,16 +2,16 @@ use std::{cmp, fmt};
 
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Dynamic {
-    val: u8,
+    val: u64,
     bits: u8,
 }
 
-impl From<Dynamic> for i8 {
+impl From<Dynamic> for i64 {
     fn from(value: Dynamic) -> Self {
-        u8::from(value.sign_extend(8)) as i8
+        u64::from(value.sign_extend(64)) as i64
     }
 }
-impl From<Dynamic> for u8 {
+impl From<Dynamic> for u64 {
     fn from(value: Dynamic) -> Self {
         value.val
     }
@@ -38,10 +38,10 @@ impl std::ops::BitAnd for Dynamic {
     }
 }
 
-impl std::ops::BitAnd<u8> for Dynamic {
+impl std::ops::BitAnd<u64> for Dynamic {
     type Output = Dynamic;
 
-    fn bitand(self, rhs: u8) -> Self::Output {
+    fn bitand(self, rhs: u64) -> Self::Output {
         Dynamic::new(self.val & rhs, self.bits)
     }
 }
@@ -65,24 +65,24 @@ impl std::ops::Sub for Dynamic {
 }
 
 impl Dynamic {
-    pub fn new(val: u8, bits: u8) -> Self {
-        assert!((1..=8).contains(&bits));
-        assert!(8 - val.leading_zeros() as u8 <= bits);
+    pub fn new(val: u64, bits: u8) -> Self {
+        assert!((1..=u64::BITS as u8).contains(&bits));
+        assert!(u64::BITS - val.leading_zeros() <= bits as u32);
         Self { val, bits }
     }
-    pub fn truncate(val: u8, bits: u8) -> Self {
+    pub fn truncate(val: u64, bits: u8) -> Self {
         Self::ones(bits) & val
     }
     pub fn ones(count: u8) -> Self {
-        assert!(count <= 8);
-        Dynamic::new(((1u16 << count) - 1) as u8, count)
+        assert!(count as u32 <= u64::BITS);
+        Dynamic::new(((1u16 << count) - 1) as u64, count)
     }
 
     pub fn sign_extend(self, new_bits: u8) -> Dynamic {
-        assert!((1..=8).contains(&new_bits));
+        assert!((1..=u64::BITS as u8).contains(&new_bits));
         assert!(self.bits <= new_bits);
 
-        let sign_bit_mask = 1_u8 << (self.bits - 1);
+        let sign_bit_mask = 1_u64 << (self.bits - 1);
         let new_val = (self.val ^ sign_bit_mask) - sign_bit_mask;
 
         Dynamic::truncate(new_val, new_bits)
@@ -121,7 +121,7 @@ impl Dynamic {
 
 pub fn replicate(val: Dynamic, count: u8) -> u64 {
     let shift = val.bits();
-    let mut val: u64 = u8::from(val).into();
+    let mut val: u64 = val.into();
 
     for _ in 1..count {
         val |= val << shift
@@ -196,7 +196,7 @@ mod tests {
     fn succeeding_new() {
         for bits in 1u8..=8 {
             for x in 0..2u16.pow(bits.into()) {
-                Dynamic::new(x.try_into().unwrap(), bits);
+                Dynamic::new(x.into(), bits);
             }
         }
     }
@@ -225,9 +225,9 @@ mod tests {
     #[test]
     fn truncate_does_not_erase_too_much() {
         for bits in 1..=8 {
-            let all_bits_set: u8 = Dynamic::ones(bits).into();
+            let all_bits_set: u64 = Dynamic::ones(bits).into();
             for val in 0..=all_bits_set {
-                let truncated: u8 = Dynamic::truncate(val, bits).into();
+                let truncated: u64 = Dynamic::truncate(val, bits).into();
                 assert_eq!(truncated, val);
             }
         }
@@ -236,9 +236,9 @@ mod tests {
     #[test]
     fn truncate_erases_enough() {
         for bits in 1..8 {
-            let all_bits_set: u8 = Dynamic::ones(bits).into();
-            for val in all_bits_set..u8::MAX {
-                let truncated: u8 = Dynamic::truncate(val, bits).into();
+            let all_bits_set: u64 = Dynamic::ones(bits).into();
+            for val in all_bits_set..u8::MAX as u64 {
+                let truncated: u64 = Dynamic::truncate(val, bits).into();
                 assert_eq!(truncated >> bits, 0);
             }
         }
