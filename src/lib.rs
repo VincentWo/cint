@@ -89,10 +89,7 @@ impl Dynamic {
     }
     pub fn zero_extend(self, new_bits: u8) -> Dynamic {
         assert!(self.bits <= new_bits);
-        Self {
-            val: self.val,
-            bits: new_bits,
-        }
+        Self::new(self.val, new_bits)
     }
 
     pub fn concat(self, rhs: Dynamic) -> Dynamic {
