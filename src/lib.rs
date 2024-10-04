@@ -75,7 +75,7 @@ impl Dynamic {
     }
     pub fn ones(count: u8) -> Self {
         assert!(count as u32 <= u64::BITS);
-        Dynamic::new(((1u16 << count) - 1) as u64, count)
+        Dynamic::new(((1u128 << count) - 1) as u64, count)
     }
 
     pub fn sign_extend(self, new_bits: u8) -> Dynamic {
