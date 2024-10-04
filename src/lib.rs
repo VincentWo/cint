@@ -34,10 +34,7 @@ impl std::ops::BitAnd for Dynamic {
     type Output = Self;
 
     fn bitand(self, rhs: Self) -> Self::Output {
-        Dynamic {
-            val: self.val & rhs.val,
-            bits: cmp::min(self.bits, rhs.bits),
-        }
+        Dynamic::new(self.val & rhs.val, cmp::min(self.bits, rhs.bits))
     }
 }
 
@@ -45,10 +42,7 @@ impl std::ops::BitAnd<u8> for Dynamic {
     type Output = Dynamic;
 
     fn bitand(self, rhs: u8) -> Self::Output {
-        Dynamic {
-            val: self.val & rhs,
-            bits: self.bits,
-        }
+        Dynamic::new(self.val & rhs, self.bits)
     }
 }
 
@@ -56,10 +50,7 @@ impl std::ops::BitOr for Dynamic {
     type Output = Self;
 
     fn bitor(self, rhs: Self) -> Self::Output {
-        Dynamic {
-            val: self.val | rhs.val,
-            bits: cmp::max(self.bits, rhs.bits),
-        }
+        Dynamic::new(self.val | rhs.val, cmp::max(self.bits, rhs.bits))
     }
 }
 
