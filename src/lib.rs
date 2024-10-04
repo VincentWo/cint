@@ -83,6 +83,7 @@ impl Dynamic {
         Self::ones(bits) & val
     }
     pub fn ones(count: u8) -> Self {
+        assert!(count <= 8);
         Dynamic::new(((1u16 << count) - 1) as u8, count)
     }
 
