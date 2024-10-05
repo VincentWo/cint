@@ -112,7 +112,7 @@ impl Dynamic {
     //  and: 0b0_0110
     pub fn rotate_right(self, len: u8) -> Self {
         let len = (len % self.bits) as u32;
-        let left_shift = (self.bits as u32 - len) % 8;
+        let left_shift = (self.bits as u32 - len) % 64;
         let new_val = (self.val >> len) | (self.val << left_shift);
 
         Dynamic::truncate(new_val, self.bits)
@@ -242,5 +242,20 @@ mod tests {
                 assert_eq!(truncated >> bits, 0);
             }
         }
+    }
+
+    #[test]
+    fn rotate_wmask() {
+        let wmask = Dynamic::new(
+            0b0000000000000000000000000000000000000000000000000000000000000001,
+            64,
+        );
+        let r = 5;
+        let rotated = Dynamic::new(
+            0b0000100000000000000000000000000000000000000000000000000000000000,
+            64,
+        );
+
+        assert_eq!(wmask.rotate_right(r), rotated);
     }
 }
