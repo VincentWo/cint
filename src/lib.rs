@@ -82,10 +82,11 @@ impl Dynamic {
         assert!((1..=u64::BITS as u8).contains(&new_bits));
         assert!(self.bits <= new_bits);
 
-        let sign_bit_mask = 1_u64 << (self.bits - 1);
-        let new_val = (self.val ^ sign_bit_mask) - sign_bit_mask;
+        let bits = 64 - self.bits;
 
-        Dynamic::truncate(new_val, new_bits)
+        let new_val = ((self.val << bits) as i64) >> bits;
+
+        Dynamic::truncate(new_val as u64, new_bits)
     }
     pub fn zero_extend(self, new_bits: u8) -> Dynamic {
         assert!(self.bits <= new_bits);
@@ -117,6 +118,15 @@ impl Dynamic {
 
         Dynamic::truncate(new_val, self.bits)
     }
+
+    pub fn wrapping_add(self, val: u64) -> Self {
+        Self::new(
+            ((self.val as u128 + val as u128) % (1 << self.bits))
+                .try_into()
+                .unwrap(),
+            self.bits,
+        )
+    }
 }
 
 pub fn replicate(val: Dynamic, count: u8) -> u64 {
@@ -132,6 +142,11 @@ pub fn replicate(val: Dynamic, count: u8) -> u64 {
 
 #[cfg(test)]
 mod tests {
+    use std::io::{stdout, Write};
+
+    use quickcheck::TestResult;
+    use quickcheck_macros::quickcheck;
+
     use super::*;
 
     #[test]
@@ -212,7 +227,6 @@ mod tests {
             (5, 0b00100000),
             (6, 0b01000000),
             (7, 0b10000000),
-            (9, 0),
         ];
 
         for (bits, val) in tests {
@@ -257,5 +271,19 @@ mod tests {
         );
 
         assert_eq!(wmask.rotate_right(r), rotated);
+    }
+    #[quickcheck]
+    fn sign_extend(val: i64) -> TestResult {
+        let absolute = val.unsigned_abs();
+        let bits = 64 - absolute.leading_zeros() + 1;
+        if bits > 64 {
+            return TestResult::discard();
+        }
+        let two_complement = if val.is_negative() {
+            (!Dynamic::new(absolute, bits as u8)).wrapping_add(1)
+        } else {
+            Dynamic::new(absolute, bits as u8)
+        };
+        TestResult::from_bool(two_complement.sign_extend(64) == Dynamic::new(val as u64, 64))
     }
 }

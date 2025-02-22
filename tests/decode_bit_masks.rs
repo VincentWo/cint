@@ -32,10 +32,15 @@ fn decode() {
 
         let d = diff & Dynamic::ones(len);
 
-        let welem = Dynamic::ones(u8::from(s) + 1).zero_extend(esize);
-        let telem = Dynamic::ones(u8::from(r) + 1).zero_extend(esize);
+        let s_count = u64::from(s) + 1;
+        let d_count = u64::from(d) + 1;
+        let welem = Dynamic::ones(s_count.try_into().unwrap()).zero_extend(esize);
+        let telem = Dynamic::ones(d_count.try_into().unwrap()).zero_extend(esize);
 
-        let wmask = replicate(welem.rotate_right(r.into()), m / esize);
+        let wmask = replicate(
+            welem.rotate_right(u64::from(r).try_into().unwrap()),
+            m / esize,
+        );
         let tmask = replicate(telem, m / esize);
 
         (wmask, tmask)
